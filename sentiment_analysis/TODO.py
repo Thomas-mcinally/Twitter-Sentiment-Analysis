@@ -1,8 +1,5 @@
-#Refine API search query and get mediu-size dataset
-    #Geolocation - UK
+#Get large dataset around NYT acquisition
 
-#Use vader for sentiment analysis of larger dataset
-
-#Create sentiment versus time plot for period around NYT acquisition
+#Do sentiment analysis for large dataset - create sentiment v. time plot
 
 
