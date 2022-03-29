@@ -38,3 +38,30 @@ Key points:
 - Different models are trained on different data - the best model to use depends on the text you are studying
 
 '''
+
+
+
+#Explain twitter API query choice
+'''
+Keyword 'wordle'
+    - Look for tweets that contain the word 'wordle' in the body of the tweet.
+
+Geolocation UK (to make results easier to interpret, less factors to consider)
+    place_country:GB
+
+Retweets not included
+    -Can't use place_country for retweets, since place is attached to original tweet
+
+Don't include tweets with media (images/videos/gifs)
+    - A lot of images in tweets are memes, and have a significant impact on the sentiment of the tweet
+    - Even if the tweet also contains text, the image might totall change the sentiment of the tweet 
+    - Example tweet: https://t.co/jD5IgohHni
+
+Don't include advertising tweets
+    -Looking for public sentiment, not how advertisers feel 
+
+Language English 
+    - VADER only works for english
+
+    query = 'wordle place_country:GB -is:retweet -has:media -is:nullcast lang:en'
+'''
