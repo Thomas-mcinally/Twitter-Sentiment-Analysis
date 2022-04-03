@@ -120,58 +120,61 @@ def clean_text(df:DataFrame) -> DataFrame:
 
     return clean_df
 
+def main():
+    #==================Collect data==============================
+    #Download tweets using twitter API full archive search (available under academic license)
+    client = tweepy.Client(bearer_token=config.academic_bearer_token, wait_on_rate_limit=True)
 
-#==================Collect data==============================
-#Download tweets using twitter API full archive search (available under academic license)
-client = tweepy.Client(bearer_token=config.academic_bearer_token, wait_on_rate_limit=True)
+    query = 'wordle place_country:GB -is:retweet -has:media -is:nullcast lang:en'
+    start_time = '2021-12-01T00:00:00Z'
+    end_time = '2022-03-15T00:00:00Z'
+    tweet_fields=['text','created_at','public_metrics']
 
-query = 'wordle place_country:GB -is:retweet -has:media -is:nullcast lang:en'
-start_time = '2021-12-01T00:00:00Z'
-end_time = '2022-03-15T00:00:00Z'
-tweet_fields=['text','created_at','public_metrics']
+    tweets_3month=[]
+    for tweet in tweepy.Paginator(client.search_all_tweets, query=query, max_results=500, start_time = start_time, end_time=end_time, tweet_fields = tweet_fields).flatten(limit=1000000):
+        tweets_3month.append(tweet)
 
-tweets_3month=[]
-for tweet in tweepy.Paginator(client.search_all_tweets, query=query, max_results=500, start_time = start_time, end_time=end_time, tweet_fields = tweet_fields).flatten(limit=1000000):
-    tweets_3month.append(tweet)
-
-#Convert tweet data to dataframe
-df_3month = convert_tweepy_data_to_dataframe(tweets_3month)
-df_3month.to_csv('wordle_3month.csv', index=False)
-
-
-#=============Sentiment analysis using roBERTa model trained on twitter data===============
-#Clean data
-clean_df = clean_text(df_3month)
-
-#Model of choice
-roberta = 'cardiffnlp/twitter-roberta-base-sentiment'
-
-#Calculate sentiment
-clean_df['sentiment'] = clean_df.text.apply(get_BERT_sentiment, model=roberta) 
-clean_df['weighted_sentiment'] = clean_df.apply(get_weighted_sentiment, axis=1)
-clean_df['datetime']= pd.to_datetime(clean_df.datetime)
-clean_df['date'] = clean_df['datetime'].dt.strftime('%Y-%m-%d')
-
-#Group by day and calculate volume and aggregate sentiment values
-result_df = clean_df.groupby('date').agg({'text':'count', 
-                                          'sentiment':'mean', 
-                                          'weighted_sentiment':'mean'})
-result_df.to_csv('results_3month_BERT.csv')
+    #Convert tweet data to dataframe
+    df_3month = convert_tweepy_data_to_dataframe(tweets_3month)
+    df_3month.to_csv('wordle_3month.csv', index=False)
 
 
-#==================Visualize results===========================================
-fig = plt.figure()
+    #=============Sentiment analysis using roBERTa model trained on twitter data===============
+    #Clean data
+    clean_df = clean_text(df_3month)
 
-plt.subplot(2,1,1)
-plt.xticks(rotation='vertical')
-plt.xlabel('date')
-plt.ylabel('mean sentiment')
-plt.bar(result_df['date'], result_df['sentiment'])
+    #Model of choice
+    roberta = 'cardiffnlp/twitter-roberta-base-sentiment'
 
-plt.subplot(2,1,2)
-plt.xticks(rotation='vertical')
-plt.xlabel('date')
-plt.ylabel('volume')
-plt.bar(result_df['date'], result_df['text'])
+    #Calculate sentiment
+    clean_df['sentiment'] = clean_df.text.apply(get_BERT_sentiment, model=roberta) 
+    clean_df['weighted_sentiment'] = clean_df.apply(get_weighted_sentiment, axis=1)
+    clean_df['datetime']= pd.to_datetime(clean_df.datetime)
+    clean_df['date'] = clean_df['datetime'].dt.strftime('%Y-%m-%d')
 
-plt.show()
+    #Group by day and calculate volume and aggregate sentiment values
+    result_df = clean_df.groupby('date').agg({'text':'count', 
+                                            'sentiment':'mean', 
+                                            'weighted_sentiment':'mean'})
+    result_df.to_csv('results_3month_BERT.csv')
+
+
+    #==================Visualize results===========================================
+    fig = plt.figure()
+
+    plt.subplot(2,1,1)
+    plt.xticks(rotation='vertical')
+    plt.xlabel('date')
+    plt.ylabel('mean sentiment')
+    plt.bar(result_df['date'], result_df['sentiment'])
+
+    plt.subplot(2,1,2)
+    plt.xticks(rotation='vertical')
+    plt.xlabel('date')
+    plt.ylabel('volume')
+    plt.bar(result_df['date'], result_df['text'])
+
+    plt.show()
+
+if __name__ == '__main__':
+    main()
