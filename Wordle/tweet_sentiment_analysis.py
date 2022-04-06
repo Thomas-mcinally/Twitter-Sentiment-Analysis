@@ -1,15 +1,13 @@
 import tweepy
 import config
 import pandas as pd
-from pandas import Series, DataFrame
 import numpy as np
 import re
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from scipy.special import softmax
+import transformers
 import matplotlib.pyplot as plt
 
 
-def convert_tweepy_data_to_dataframe(tweet_data:list) -> DataFrame:
+def convert_tweepy_data_to_dataframe(tweet_data:list) -> pd.DataFrame:
     '''
     Extracts useful info from tweets downloaded from twitter api, and put results in a pandas dataframe
 
@@ -43,8 +41,8 @@ def get_BERT_sentiment(text:str, model:str) -> int:
         sentiment (int) - Sentiment score for the text. Takes values -1, 0 or +1 (negative, neutral or positive)
     '''
     #Load model and tokenizer
-    model=AutoModelForSequenceClassification.from_pretrained(roberta)
-    tokenizer = AutoTokenizer.from_pretrained(roberta)
+    model = transformers.AutoModelForSequenceClassification.from_pretrained(model)
+    tokenizer = transformers.AutoTokenizer.from_pretrained(model)
 
     encoded_tweet = tokenizer(text, return_tensors='pt')
     output = model(encoded_tweet['input_ids'],encoded_tweet['attention_mask'])
@@ -60,12 +58,12 @@ def get_BERT_sentiment(text:str, model:str) -> int:
         sentiment=1
     return sentiment
 
-def get_weighted_sentiment(row:Series) -> float:
+def get_weighted_sentiment(row:pd.Series) -> float:
     '''
     Calculates the weighted sentiment score of a tweet, using its like count
 
     Parameters:
-        row (pandas Series) - Series containing sentiment and like_count for a tweet
+        row (pd.Series) - Series containing sentiment and like_count for a tweet
     
     Returns:
         weighted_sentiment (float) - Weighted sentiment score
@@ -79,16 +77,16 @@ def get_weighted_sentiment(row:Series) -> float:
     return weighted_sentiment
 
 
-def clean_text(df:DataFrame) -> DataFrame:
+def clean_text(df:pd.DataFrame) -> pd.DataFrame:
     '''
     Cleans up text column of tweet dataframe
 
     Parameters:
-        df (Pandas DataFrame) - Dataframe containing data for downloaded tweets
+        df (pd.DataFrame) - Dataframe containing data for downloaded tweets
     
     Returns:
-        clean_df (Pandas DataFrame) - Input dataframe with cleaned up text column. 
-                                      If text column is empty after cleaning then row is dropped.
+        clean_df (pd.DataFrame) - Input dataframe with cleaned up text column. 
+                                  If text column is empty after cleaning then row is dropped.
     '''
     #Copy to not modify original df object
     clean_df = df.copy(deep=True)
